@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHATTY Bingo</title>
+    <script src="https://cdn.tailwindcss.com "></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti @1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css ">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom right, #111827, #1f2937);
+            color: #f9fafb;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Cartela Grid */
+        .cartela-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4px;
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            background: #1f2937;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .cartela-button {
+            width: 40px;
+            height: 40px;
+            padding: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #374151;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cartela-button.selected {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 0 0 2px #2563eb;
+        }
+
+        /* Number Grid */
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            gap: 2px;
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            background: #1f2937;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .number-cell {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: #374151;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .number-cell.drawn {
+            background: linear-gradient(135deg, #4ade80, #22d3ee);
+            color: white;
+            font-weight: bold;
+            transform: scale(1.05);
+            box-shadow: 0 0 0 2px #2563eb;
+        }
+
+        /* Controls */
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .start-page-btn, .start-game-btn, .shuffle-btn, .reset-btn, .check-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .start-page-btn:hover, .start-game-btn:hover, .shuffle-btn:hover,
+        .reset-btn:hover, .check-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background: #111827;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background: #1f2937;
+            transition: right 0.3s ease;
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .admin-panel.open {
+            right: 0;
+        }
+
+        .admin-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .history-item {
+            margin: 5px 0;
+            padding: 4px 8px;
+            background: #374151;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* Input Fields */
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #374151;
+            color: #f9fafb;
+            min-width: 100px;
+        }
+
+        /* Circle Display */
+        .circle-display {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            background: #374151;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+            animation: bounce 1s infinite alternate;
+            border: 4px solid #3b82f6;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .circle-letter {
+            font-size: 32px;
+            margin-bottom: -8px;
+        }
+
+        .circle-number {
+            font-size: 48px;
+            margin-top: -8px;
+        }
+
+        /* Prize Display */
+        .prize-display {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #facc15;
+            margin: 10px 0;
+        }
+
+        /* Recent Draws */
+        #recent-draws {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-width: 600px;
+            margin: 0 auto 10px;
+            justify-content: center;
+        }
+
+        .drawn-circle {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4ade80, #22d3ee);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Cartela Display */
+        .cartela-display {
+            max-width: 400px;
+            margin: 20px auto;
+            background: #1f2937;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .cartela-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .cartela-cell {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #374151;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .cartela-cell.marked {
+            background: linear-gradient(135deg, #4ade80, #22d3ee);
+            color: white;
+            font-weight: bold;
+        }
+
+        .cartela-cell.free {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Shuffle Animation */
+        @keyframes shuffle {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .shuffling {
+            animation: shuffle 0.5s linear;
+        }
+
+        /* Pattern Visualization */
+        .winning-line {
+            position: absolute;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            opacity: 0.8;
+            height: 4px;
+        }
+
+        .winning-row {
+            width: 100%;
+            left: 0;
+        }
+
+        .winning-col {
+            width: 4px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .winning-corner {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            border-radius: 50%;
+        }
+
+        .top-left { top: 0; left: 0; }
+        .top-right { top: 0; right: 0; }
+        .bottom-left { bottom: 0; left: 0; }
+        .bottom-right { bottom: 0; right: 0; }
+
+        /* Settings Toggle Button */
+        #adminToggle {
+            position: fixed;
+            top: 20px;
+            right: 0;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 NHATTY Bingo</h1>
+
+    <!-- First Page -->
+    <div id="firstPage">
+        <div class="input-group">
+            <input type="text" id="cartelaInput" placeholder="Enter cartelas (e.g., 1,3,5-8)">
+            <button onclick="handleCartelaInput()" class="start-page-btn">Add Cartelas</button>
+            <input type="number" id="betAmount" value="20" min="1" class="bg-gray-800 text-white border-gray-600 rounded p-2 mr-4">
+        </div>
+
+        <div class="controls">
+            <button class="start-page-btn" onclick="startGame()">Start Game</button>
+            <button class="reset-btn" onclick="syncPrevious()">Sync Previous</button>
+        </div>
+
+        <div class="cartela-grid" id="cartelasGrid"></div>
+    </div>
+
+    <!-- Second Page -->
+    <div id="secondPage" class="hidden">
+        <div class="status-bar">
+            <div id="drawnCount">Drawn: 0</div>
+            <div id="workStatus">Work Status: Idle</div>
+            <div class="prize-display">Prize: ETB <span id="prizeAmount">0</span></div>
+        </div>
+
+        <!-- Circle Display -->
+        <div class="circle-display" id="callingDisplay">
+            <div class="circle-letter" id="callingLetter">B</div>
+            <div class="circle-number" id="callingNumber">15</div>
+        </div>
+
+        <!-- Game Controls -->
+        <div class="controls">
+            <button class="start-game-btn" onclick="startDraw()">Start Game</button>
+            <button class="shuffle-btn" onclick="shuffleNumbers()">Shuffle</button>
+            <button class="reset-btn" onclick="resetGame()">Reset</button>
+        </div>
+
+        <!-- Number Grid -->
+        <div class="number-grid" id="numberGrid"></div>
+
+        <!-- Check Bingo -->
+        <div class="controls">
+            <input type="number" id="checkInput" placeholder="Cartela ID" class="bg-gray-800 text-white border-gray-600 rounded p-2 mr-2">
+            <button onclick="checkBingo()" class="check-btn">Check Bingo</button>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="admin-panel">
+        <div class="admin-header">Admin Panel</div>
+        
+        <div class="admin-section">
+            <div class="font-bold mb-2">Balance History</div>
+            <div id="balanceHistoryList" class="space-y-1"></div>
+        </div>
+
+        <div class="admin-section">
+            <div class="font-bold mb-2">Daily Work Calculator</div>
+            <div id="dailyWork" class="p-2 bg-gray-800 rounded mb-2 text-center">ETB 0</div>
+        </div>
+
+        <div class="admin-section">
+            <div class="font-bold mb-2">Current Balance</div>
+            <div id="currentBalance" class="p-2 bg-gray-800 rounded mb-2 text-center">ETB 50000</div>
+        </div>
+    </div>
+
+    <!-- Settings Toggle Button -->
+    <button id="adminToggle" class="fixed top-20 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-l shadow-lg transition-all duration-300" style="z-index: 9999;">
+        <i class="fas fa-cog"></i>
+    </button>
+
+    <script>
+        // Game state
+        let selectedCartelas = [];
+        let drawnNumbers = [];
+        let autoDrawInterval = null;
+        let isAutoDrawing = false;
+        let baseBet = 20;
+        let prizePool = 0;
+        let balance = 50000; // Starting at 50,000 birr
+        let dailyWork = 0;
+
+        // Generate cartela buttons (150)
+        function generateCartelaButtons() {
+            const container = document.getElementById('cartelasGrid');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 150; i++) {
+                if (i === 124) continue; // Skip malformed cartela
+                
+                const btn = document.createElement('button');
+                btn.className = 'cartela-button';
+                btn.textContent = i;
+                btn.setAttribute('data-cartela-id', i);
+                btn.onclick = () => toggleCartela(i, btn);
+                container.appendChild(btn);
+            }
+        }
+
+        // Toggle cartela selection
+        function toggleCartela(id, btn) {
+            const idx = selectedCartelas.indexOf(id);
+            if (idx === -1) {
+                selectedCartelas.push(id);
+                btn.classList.add('selected');
+            } else {
+                selectedCartelas.splice(idx, 1);
+                btn.classList.remove('selected');
+            }
+        }
+
+        // Handle keyboard cartela input
+        function handleCartelaInput() {
+            const input = document.getElementById('cartelaInput').value;
+            if (!input.trim()) return;
+            
+            const parts = input.split(',');
+            
+            parts.forEach(part => {
+                part = part.trim();
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(Number);
+                    for (let i = start; i <= end; i++) {
+                        if (i >= 1 && i <= 150 && i !== 124) {
+                            const btn = document.querySelector(`[data-cartela-id="${i}"]`);
+                            if (btn) btn.click();
+                        }
+                    }
+                } else {
+                    const num = parseInt(part);
+                    if (num >= 1 && num <= 150 && num !== 124) {
+                        const btn = document.querySelector(`[data-cartela-id="${num}"]`);
+                        if (btn) btn.click();
+                    }
+                }
+            });
+            
+            document.getElementById('cartelaInput').value = '';
+        }
+
+        // Start game
+        function startGame() {
+            if (selectedCartelas.length === 0) {
+                alert("Please select at least one cartela");
+                return;
+            }
+            
+            document.getElementById('firstPage').classList.add('hidden');
+            document.getElementById('secondPage').classList.remove('hidden');
+            
+            if (!document.getElementById('numberGrid').children.length) {
+                generateNumberGrid();
+            }
+        }
+
+        // Generate number grid (15x5)
+        function generateNumberGrid() {
+            const container = document.getElementById('numberGrid');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 75; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'number-cell';
+                cell.textContent = i;
+                cell.onclick = () => toggleNumber(i, cell);
+                container.appendChild(cell);
+            }
+        }
+
+        // Toggle number selection
+        function toggleNumber(num, cell) {
+            const idx = drawnNumbers.indexOf(num);
+            if (idx === -1) {
+                drawnNumbers.push(num);
+                cell.classList.add('drawn');
+            } else {
+                drawnNumbers.splice(idx, 1);
+                cell.classList.remove('drawn');
+            }
+            updateCallingDisplay(num);
+            updatePrize();
+        }
+
+        // Update calling display
+        function updateCallingDisplay(num) {
+            const letterDisplay = document.getElementById('callingLetter');
+            const numberDisplay = document.getElementById('callingNumber');
+            
+            // Determine letter
+            let letter = "";
+            if (num <= 15) letter = "B";
+            else if (num <= 30) letter = "I";
+            else if (num <= 45) letter = "N";
+            else if (num <= 60) letter = "G";
+            else letter = "O";
+            
+            // Update display
+            letterDisplay.textContent = letter;
+            numberDisplay.textContent = num;
+            
+            // Add to recent draws
+            const recentDraws = document.getElementById('recent-draws');
+            const recentNum = document.createElement('div');
+            recentNum.className = 'drawn-circle';
+            recentNum.textContent = num;
+            recentDraws.appendChild(recentNum);
+        }
+
+        // Update prize pool
+        function updatePrize() {
+            // Prize increases by 10% of bet amount per draw
+            baseBet = parseInt(document.getElementById('betAmount').value) || 20;
+            prizePool += Math.floor(baseBet * 0.1);
+            document.getElementById('prizeAmount').textContent = prizePool;
+        }
+
+        // Start drawing numbers
+        function startDraw() {
+            if (!isAutoDrawing) {
+                isAutoDrawing = true;
+                document.querySelector('.start-game-btn').textContent = 'Pause';
+                autoDrawInterval = setInterval(() => {
+                    if (isAutoDrawing) drawNumber();
+                }, 4000);
+            } else {
+                isAutoDrawing = false;
+                document.querySelector('.start-game-btn').textContent = 'Start Game';
+                clearInterval(autoDrawInterval);
+            }
+        }
+
+        // Draw random number
+        function drawNumber() {
+            const available = [...Array(75)].map((_, i) => i + 1)
+                .filter(n => !drawnNumbers.includes(n));
+            
+            if (available.length === 0) {
+                alert("All numbers drawn!");
+                return;
+            }
+
+            const num = available[Math.floor(Math.random() * available.length)];
+            drawnNumbers.push(num);
+            
+            // Update UI
+            document.querySelectorAll('.number-cell').forEach(cell => {
+                if (cell.textContent == num) {
+                    cell.classList.add('drawn');
+                }
+            });
+            
+            // Deduct balance (hidden from user)
+            deductBalance();
+            
+            // Update visual display
+            updateCallingDisplay(num);
+            
+            // Update status
+            updateStatus();
+        }
+
+        // Deduct balance (hidden from user)
+        function deductBalance() {
+            // Deduct 25% of bet amount
+            const deduction = Math.floor(baseBet * 0.25);
+            balance -= deduction;
+            dailyWork += deduction;
+            
+            // Auto-reset if balance reaches zero
+            if (balance <= 0) {
+                balance = 50000;
+                dailyWork = 0;
+                alert("⚠️ Balance reached zero! Reset to 50,000 ETB");
+            }
+            
+            // Update admin panel
+            document.getElementById('currentBalance').textContent = `ETB ${balance}`;
+            document.getElementById('dailyWork').textContent = `ETB ${dailyWork}`;
+        }
+
+        // Update game status
+        function updateStatus() {
+            document.getElementById('drawnCount').textContent = `Drawn: ${drawnNumbers.length}`;
+            document.getElementById('workStatus').textContent = `Work Status: ${isAutoDrawing ? 'Drawing' : 'Paused'}`;
+        }
+
+        // Shuffle numbers with animation
+        function shuffleNumbers() {
+            document.getElementById('numberGrid').classList.add('shuffling');
+            setTimeout(() => {
+                document.getElementById('numberGrid').classList.remove('shuffling');
+                document.querySelectorAll('.number-cell').forEach(cell => cell.classList.remove('drawn'));
+                document.getElementById('recent-draws').innerHTML = '';
+                document.getElementById('workStatus').textContent = 'Work Status: Shuffled';
+            }, 500);
+        }
+
+        // Reset game
+        function resetGame() {
+            if (confirm("Reset game? This will clear all selections")) {
+                clearInterval(autoDrawInterval);
+                isAutoDrawing = false;
+                selectedCartelas = [];
+                drawnNumbers = [];
+                prizePool = 0;
+                balance = 50000;
+                dailyWork = 0;
+                document.getElementById('secondPage').classList.add('hidden');
+                document.getElementById('firstPage').classList.remove('hidden');
+                document.getElementById('workStatus').textContent = 'Work Status: Idle';
+                document.querySelectorAll('.cartela-button').forEach(btn => btn.classList.remove('selected'));
+                document.querySelectorAll('.number-cell').forEach(cell => cell.classList.remove('drawn'));
+                document.getElementById('recent-draws').innerHTML = '';
+            }
+        }
+
+        // Sync previous game
+        function syncPrevious() {
+            if (confirm("Sync game? This will clear all selections")) {
+                drawnNumbers = [];
+                document.querySelectorAll('.number-cell').forEach(cell => cell.classList.remove('drawn'));
+                document.getElementById('recent-draws').innerHTML = '';
+            }
+        }
+
+        // Check for Bingo
+        function checkBingo() {
+            const id = parseInt(document.getElementById('checkInput').value);
+            const result = document.getElementById('bingoResult');
+            result.innerHTML = "";
+            
+            if (!id || id < 1 || id > 150 || id === 124) {
+                alert("Enter a valid cartela ID (1-150, except 124)");
+                return;
+            }
+            
+            // Simulate cartela validation
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            result.innerHTML = `🎉 BINGO! Cartela #${id} wins!`;
+            document.getElementById('workStatus').textContent = 'Winner Detected!';
+        }
+
+        // Initialize
+        function init() {
+            generateCartelaButtons();
+            
+            // Add keyboard listener
+            document.getElementById('cartelaInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleCartelaInput();
+            });
+        }
+
+        window.addEventListener('load', init);
+
+        // Toggle admin panel
+        document.getElementById('adminToggle').addEventListener('click', () => {
+            document.getElementById('adminPanel').classList.toggle('open');
+        });
+    </script>
+</body>
+</html>
